@@ -1,0 +1,779 @@
+<html lang="en" class="bg-[#141414] text-white antialiased selection:bg-[#E50914] selection:text-white"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shaun &amp; Queen | Netflix</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Playfair+Display:ital,wght@0,400;0,500;1,400;1,500&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        bebas: ['"Bebas Neue"', 'sans-serif'],
+                        montserrat: ['Montserrat', 'sans-serif'],
+                        playfair: ['"Playfair Display"', 'serif'],
+                    },
+                    colors: {
+                        netflix: '#E50914',
+                        dark: '#141414',
+                    },
+                    animation: {
+                        'ken-burns': 'ken-burns 20s ease-in-out infinite alternate',
+                        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    },
+                    keyframes: {
+                        'ken-burns': {
+                            '0%': { transform: 'scale(1)' },
+                            '100%': { transform: 'scale(1.04)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Dependencies -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script crossorigin="" src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin="" src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
+
+    <style>
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        .film-grain {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+            opacity: 0.04;
+            mix-blend-mode: overlay;
+        }
+
+        .cinematic-filter {
+            filter: contrast(1.1) brightness(0.65) saturate(0.85) sepia(0.05);
+        }
+
+        /* ── Episode card crossfade ── */
+        .ep-thumb, .ep-video {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: opacity 0.5s ease;
+        }
+        .ep-thumb  { opacity: 1; }
+        .ep-video  { opacity: 0; }
+        .ep-card-hovered .ep-thumb { opacity: 0; }
+        .ep-card-hovered .ep-video { opacity: 1; }
+
+        /* ── Music waveform bars ── */
+        @keyframes bar {
+            0%, 100% { transform: scaleY(0.4); }
+            50%       { transform: scaleY(1);   }
+        }
+        .bar { display: inline-block; width: 3px; background: #E50914; border-radius: 2px; transform-origin: bottom; animation: bar 0.8s ease-in-out infinite; }
+        .bar:nth-child(2) { animation-delay: 0.15s; height: 14px; }
+        .bar:nth-child(3) { animation-delay: 0.30s; height: 10px; }
+        .bar:nth-child(1) { height: 12px; }
+
+        /* ── Music tooltip ── */
+        .music-tooltip {
+            position: absolute;
+            bottom: calc(100% + 10px);
+            right: 0;
+            white-space: nowrap;
+            background: #181818;
+            border: 1px solid rgba(255,255,255,0.12);
+            color: #d1d5db;
+            font-size: 0.7rem;
+            padding: 6px 10px;
+            border-radius: 6px;
+            pointer-events: none;
+            opacity: 0;
+            transform: translateY(4px);
+            transition: opacity 0.2s, transform 0.2s;
+            font-family: 'Montserrat', sans-serif;
+        }
+        .music-btn:hover .music-tooltip,
+        .music-btn:focus .music-tooltip {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body class="font-montserrat text-lg overflow-x-hidden">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef, useCallback } = React;
+        const { motion, AnimatePresence } = window.Motion;
+
+        // ─────────────────────────────────────────────────────────────────────────────
+        // DATA
+        // ─────────────────────────────────────────────────────────────────────────────
+        const EPISODES = [
+            {
+                id: 1,
+                title: "One of the first moments",
+                description: "The very first look that changed everything.",
+                thumbnail: "Assets/Images/Firsts.jpeg",
+                video: "Assets/Videos/OutsideVid.mp4",
+                duration: "Forever",
+                date: ""
+            },
+            {
+                id: 2,
+                title: "My Place or Your Place?",
+                description: "I love loving you in both our spaces.",
+                thumbnail: "Assets/Images/KampStud.jpeg",
+                video: "Assets/Videos/KampStud.mp4",
+                duration: "Endless",
+                date: ""
+            },
+            {
+                id: 3,
+                title: "Valentine's Day Special",
+                description: "'Txatxi la baratani', which was special.",
+                thumbnail: "Assets/Images/ValentinesDayCollage.jpeg",
+                video: "Assets/Videos/ValVid.mp4",
+                duration: "Timeless",
+                date: ""
+            },
+            {
+                id: 4,
+                title: "Graduation Day",
+                description: "Sharing milestones and memories.",
+                thumbnail: "Assets/Images/GradDay.jpeg",
+                video: "Assets/Videos/GradVid.mp4",
+                duration: "Endless",
+                date: ""
+            },
+            {
+                id: 5,
+                title: "Golden Hour",
+                description: "Intimate moments that define us.",
+                thumbnail: "Assets/Images/KS.jpeg",
+                video: "Assets/Videos/KampStud3.mp4",
+                duration: "Timeless",
+                date: ""
+            },
+            {
+                id: 6,
+                title: "By the Lake",
+                description: "Quiet moments and loud heartbeats.",
+                thumbnail: "Assets/Images/LakePhotoEat.jpeg",
+                video: "Assets/Videos/LakeVidKisses.mp4",
+                duration: "Infinite",
+                date: ""
+            },
+            {
+                id: 7,
+                title: "Chilling at Home",
+                description: "Love this for us.",
+                thumbnail: "Assets/Images/CK.jpeg",
+                video: "Assets/Videos/CKVid.mp4",
+                duration: "Never-ending",
+                date: ""
+            },
+        ];
+
+        // ─────────────────────────────────────────────────────────────────────────────
+        // HELPERS
+        // ─────────────────────────────────────────────────────────────────────────────
+
+        const Icon = ({ name, className = "" }) => {
+            useEffect(() => { lucide.createIcons(); });
+            return <i data-lucide={name} stroke-width="1.5" className={className}></i>;
+        };
+
+        const CinematicImage = ({ src, className = "", imgClassName = "" }) => (
+            <div className={`relative overflow-hidden ${className}`}>
+                <img src={src} alt="" className={`w-full h-full object-cover cinematic-filter ${imgClassName}`} />
+                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_40%,rgba(0,0,0,0.6)_100%)] pointer-events-none" />
+                <div className="film-grain" />
+            </div>
+        );
+
+        // ─────────────────────────────────────────────────────────────────────────────
+        // INTRO
+        // ─────────────────────────────────────────────────────────────────────────────
+
+        const Intro = ({ onComplete }) => {
+            useEffect(() => {
+                const t = setTimeout(onComplete, 2500);
+                return () => clearTimeout(t);
+            }, [onComplete]);
+
+            return (
+                <motion.div
+                    initial={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.8, ease: "easeInOut" }}
+                    className="fixed inset-0 z-50 bg-black flex items-center justify-center"
+                >
+                    <motion.div
+                        initial={{ scale: 0.8, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1] }}
+                        className="text-netflix font-bebas text-9xl tracking-tight"
+                    >
+                        N
+                    </motion.div>
+                </motion.div>
+            );
+        };
+
+        // ─────────────────────────────────────────────────────────────────────────────
+        // NAVBAR
+        // ─────────────────────────────────────────────────────────────────────────────
+
+        const Navbar = () => {
+            const [isScrolled, setIsScrolled] = useState(false);
+
+            useEffect(() => {
+                const onScroll = () => setIsScrolled(window.scrollY > 80);
+                window.addEventListener('scroll', onScroll);
+                return () => window.removeEventListener('scroll', onScroll);
+            }, []);
+
+            return (
+                <motion.nav
+                    className={`fixed top-0 w-full z-40 transition-all duration-500 ease-in-out px-4 md:px-12 py-6 flex items-center justify-between ${
+                        isScrolled
+                            ? 'bg-[#141414]/95 backdrop-blur-md shadow-lg shadow-black/20'
+                            : 'bg-gradient-to-b from-black/80 to-transparent'
+                    }`}
+                >
+                    <div className="flex items-center gap-8">
+                        <motion.div
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ duration: 0.8, delay: 0.2 }}
+                            onClick={() => window.location.reload()}
+                            className="text-netflix font-bebas text-4xl tracking-tight leading-none cursor-pointer select-none hover:opacity-80 transition-opacity"
+                        >
+                            N
+                        </motion.div>
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ duration: 0.8, delay: 0.4 }}
+                            className="hidden md:flex items-center gap-6 text-base font-normal text-gray-300"
+                        >
+                            <a href="#" className="text-white font-medium">Home</a>
+                            <a href="#" className="hover:text-white transition-colors">TV Shows</a>
+                            <a href="#" className="hover:text-white transition-colors">Films</a>
+                            <a href="#" className="hover:text-white transition-colors">Romance</a>
+                        </motion.div>
+                    </div>
+                    <motion.div
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.8, delay: 0.6 }}
+                        className="flex items-center gap-6 text-white"
+                    >
+                        <button className="hover:text-gray-300 transition-colors">
+                            <Icon name="search" className="w-5 h-5" />
+                        </button>
+                        <button className="hover:text-gray-300 transition-colors hidden sm:block">
+                            <Icon name="bell" className="w-5 h-5" />
+                        </button>
+                        <div className="w-8 h-8 rounded-full bg-netflix flex items-center justify-center text-xs font-medium tracking-wide">
+                            SQ
+                        </div>
+                    </motion.div>
+                </motion.nav>
+            );
+        };
+
+        // ─────────────────────────────────────────────────────────────────────────────
+        // SHARED HERO CONTENT (badges + text + buttons) — reused in both heroes
+        // ─────────────────────────────────────────────────────────────────────────────
+
+        const HeroContent = ({ onPlayClick, delay = 2.6 }) => (
+            <div className="max-w-2xl">
+                {/* N SERIES label */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.8, delay: delay }}
+                    className="flex items-center gap-2 mb-4"
+                >
+                    <span className="text-netflix font-bebas text-2xl tracking-tight">N</span>
+                    <span className="text-gray-400 text-sm font-medium tracking-[0.2em]">SERIES</span>
+                </motion.div>
+
+                {/* Title */}
+                <motion.h1
+                    initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.8, delay: delay + 0.2 }}
+                    className="font-bebas text-6xl sm:text-7xl md:text-9xl tracking-tight text-white leading-none mb-6 drop-shadow-2xl"
+                >
+                    Shaun &amp; Queen
+                </motion.h1>
+
+                {/* Metadata badges */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.8, delay: delay + 0.4 }}
+                    className="flex flex-wrap items-center gap-3 mb-6"
+                >
+                    {/* TOP 10 */}
+                    <div className="flex items-center bg-netflix text-white text-xs font-medium px-1.5 py-0.5 rounded-sm">
+                        <div className="flex flex-col items-center leading-none mr-1">
+                            <span className="text-[8px] tracking-tight">TOP</span>
+                            <span className="text-base tracking-tight font-semibold">10</span>
+                        </div>
+                    </div>
+                    <span className="text-[#46d369] font-medium text-sm md:text-base">Together Since 2024</span>
+                    <span className="text-gray-300 border border-gray-500 px-2 py-0.5 text-xs md:text-sm rounded-sm">Season 2</span>
+                    <span className="text-white text-sm md:text-base">19 May</span>
+                </motion.div>
+
+                {/* Quote */}
+                <motion.p
+                    initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.8, delay: delay + 0.6 }}
+                    className="font-playfair italic text-lg md:text-2xl text-gray-200 mb-8 max-w-xl leading-relaxed drop-shadow-md"
+                >
+                    "If my life were a catalogue, you would be the only series I'd watch over and over again.
+                    <br className="hidden sm:block" /> Happy 2 years anniversary, my love."
+                </motion.p>
+
+                {/* Buttons */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.8, delay: delay + 0.8 }}
+                    className="flex items-center gap-4"
+                >
+                    <button
+                        onClick={onPlayClick}
+                        className="bg-white text-black px-5 md:px-6 py-2.5 md:py-3 rounded flex items-center gap-2 font-medium text-base md:text-lg hover:bg-white/80 transition-all hover:scale-105"
+                    >
+                        <Icon name="play" className="w-5 h-5 md:w-6 md:h-6 fill-black" />
+                        Play
+                    </button>
+                    <button className="bg-[#6d6d6eb3] text-white px-5 md:px-6 py-2.5 md:py-3 rounded flex items-center gap-2 font-medium text-base md:text-lg hover:bg-[#6d6d6e] transition-all hover:scale-105 backdrop-blur-sm">
+                        <Icon name="info" className="w-5 h-5 md:w-6 md:h-6" />
+                        More Info
+                    </button>
+                </motion.div>
+            </div>
+        );
+
+        // ─────────────────────────────────────────────────────────────────────────────
+        // HERO — DESKTOP (landscape image, side-by-side layout, md and up)
+        // Change the src below to your landscape/desktop hero image.
+        // ─────────────────────────────────────────────────────────────────────────────
+
+        const HeroDesktop = ({ onPlayClick }) => (
+            <div className="hidden md:flex relative h-screen w-full items-center justify-start overflow-hidden">
+                {/* Background: landscape image */}
+                <div className="absolute inset-0 z-0">
+                    <CinematicImage
+                        src="Assets/Images/LakePhotoEat.jpeg"
+                        // ↑ REPLACE with your landscape/desktop hero photo path
+                        className="w-full h-full"
+                        imgClassName="animate-ken-burns object-center"
+                    />
+                    {/* Left-to-right gradient so text is readable */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/50 to-transparent" />
+                    {/* Bottom fade into page background */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#141414] via-transparent to-transparent" />
+                </div>
+
+                {/* Content */}
+                <div className="relative z-10 w-full px-12 flex flex-row justify-between items-center">
+                    <HeroContent onPlayClick={onPlayClick} delay={2.6} />
+
+                  
+                </div>
+            </div>
+        );
+
+        // ─────────────────────────────────────────────────────────────────────────────
+        // HERO — MOBILE (portrait image, centred layout, below md)
+        // The portrait image fills more of the screen height; text sits at the bottom.
+        // Change the src below to your portrait/mobile hero image.
+        // ─────────────────────────────────────────────────────────────────────────────
+
+        const HeroMobile = ({ onPlayClick }) => (
+            <div className="flex md:hidden relative w-full overflow-hidden" style={{ minHeight: '100svh' }}>
+                {/* Background: portrait image — fills full height */}
+                <div className="absolute inset-0 z-0">
+                    <CinematicImage
+                        src="Assets/Images/LakePhot0C.jpeg"
+                        // ↑ REPLACE with your portrait/mobile hero photo path
+                        className="w-full h-full"
+                        imgClassName="animate-ken-burns object-top"
+                    />
+                    {/* Strong bottom gradient so text is readable over the portrait */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/30 to-transparent" />
+                    {/* Subtle left tint */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-transparent" />
+                </div>
+
+                {/* Content pinned to bottom */}
+                <div className="relative z-10 w-full flex flex-col justify-end px-5 pb-12 pt-32">
+                    <HeroContent onPlayClick={onPlayClick} delay={2.6} />
+                </div>
+            </div>
+        );
+
+        // ─────────────────────────────────────────────────────────────────────────────
+        // EPISODE CARD
+        // ─────────────────────────────────────────────────────────────────────────────
+
+        const EpisodeCard = ({ episode, activeId, setActiveId }) => {
+            const hoverTimerRef = useRef(null);
+            const videoRef      = useRef(null);
+            const isActive      = activeId === episode.id;
+
+            const handleMouseEnter = useCallback(() => {
+                hoverTimerRef.current = setTimeout(() => setActiveId(episode.id), 400);
+            }, [episode.id, setActiveId]);
+
+            const handleMouseLeave = useCallback(() => {
+                if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
+                setActiveId(null);
+            }, [setActiveId]);
+
+            useEffect(() => {
+                const vid = videoRef.current;
+                if (!vid) return;
+                if (isActive) {
+                    vid.currentTime = 0;
+                    vid.play().catch(() => {});
+                } else {
+                    vid.pause();
+                }
+            }, [isActive]);
+
+            return (
+                <motion.div
+                    className={`min-w-[170px] sm:min-w-[200px] md:min-w-[220px] snap-start relative rounded-md overflow-hidden cursor-pointer group ${isActive ? 'ep-card-hovered' : ''}`}
+                    whileHover={{ scale: 1.05 }}
+                    onMouseEnter={handleMouseEnter}
+                    onMouseLeave={handleMouseLeave}
+                    transition={{ duration: 0.3, ease: "easeOut" }}
+                    style={{ flexShrink: 0 }}
+                >
+                    <div
+                        className="relative w-full bg-[#2f2f2f] rounded-md overflow-hidden shadow-none group-hover:shadow-2xl group-hover:shadow-black/60 transition-shadow duration-300"
+                        style={{ aspectRatio: '2/3' }}
+                    >
+                        {/* Static thumbnail */}
+                        <img
+                            src={episode.thumbnail}
+                            alt={episode.title}
+                            className="ep-thumb cinematic-filter"
+                        />
+
+                        {/* Video on hover */}
+                        <video
+                            ref={videoRef}
+                            src={episode.video}
+                            muted
+                            loop
+                            playsInline
+                            preload="metadata"
+                            className="ep-video cinematic-filter"
+                        />
+
+                        {/* Vignette + grain */}
+                        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_40%,rgba(0,0,0,0.55)_100%)] pointer-events-none" />
+                        <div className="film-grain" />
+
+                        {/* Bottom text overlay */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent pointer-events-none" />
+                        <div className="absolute bottom-0 left-0 p-3 md:p-4 w-full">
+                            <p className="text-netflix text-[10px] font-medium mb-1 tracking-tight uppercase font-montserrat">
+                                Episode {episode.id}{episode.date ? ` · ${episode.date}` : ''}
+                            </p>
+                            <h3 className="text-white font-bebas text-xl md:text-2xl tracking-tight leading-none mb-1">{episode.title}</h3>
+                            <p className="text-gray-300 text-xs md:text-sm line-clamp-2 leading-snug">{episode.description}</p>
+                        </div>
+
+                        {/* Duration pill */}
+                        <div className="absolute top-2 right-2 md:top-3 md:right-3 bg-black/60 backdrop-blur-sm text-gray-300 text-[10px] md:text-xs px-2 py-0.5 rounded-full font-medium">
+                            {episode.duration}
+                        </div>
+                    </div>
+                </motion.div>
+            );
+        };
+
+        // ─────────────────────────────────────────────────────────────────────────────
+        // HORIZONTAL ROW
+        // ─────────────────────────────────────────────────────────────────────────────
+
+        const HorizontalRow = ({ title, children }) => (
+            <div className="mb-14">
+                <h2 className="text-xl md:text-3xl font-medium text-white mb-4 px-4 md:px-12 tracking-tight">{title}</h2>
+                <div
+                    className="flex overflow-x-auto gap-4 md:gap-5 px-4 md:px-12 pb-8 pt-4 snap-x snap-mandatory no-scrollbar"
+                    style={{ scrollBehavior: 'smooth' }}
+                >
+                    {children}
+                </div>
+            </div>
+        );
+
+        // ─────────────────────────────────────────────────────────────────────────────
+        // ABOUT SECTION
+        // ─────────────────────────────────────────────────────────────────────────────
+
+        const AboutSection = () => (
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-100px" }}
+                transition={{ duration: 0.8 }}
+                className="px-4 md:px-12 py-12 border-t border-[#2f2f2f]"
+            >
+                <h2 className="text-2xl md:text-4xl font-medium text-white mb-8 tracking-tight">About This Story</h2>
+                <div className="flex flex-col md:flex-row gap-8 md:gap-12">
+                    <div className="w-full md:w-1/3">
+                        <CinematicImage src="Assets/Images/LakePhotoQueen1.jpeg" className="w-full aspect-square rounded-md shadow-2xl" />
+                    </div>
+                    <div className="w-full md:w-2/3 flex flex-col justify-center space-y-5 md:space-y-6">
+                        <div>
+                            <span className="text-gray-500 text-sm md:text-base block mb-2">Cast:</span>
+                            <div className="flex flex-wrap gap-3">
+                                <span className="bg-[#2f2f2f] text-white px-3 md:px-4 py-1.5 md:py-2 rounded-full text-sm md:text-base font-medium">Shaun — The Lead</span>
+                                <span className="bg-[#2f2f2f] text-white px-3 md:px-4 py-1.5 md:py-2 rounded-full text-sm md:text-base font-medium">Queen — The Star</span>
+                            </div>
+                        </div>
+                        <div className="flex flex-col gap-2 text-sm md:text-base">
+                            <div className="flex gap-2">
+                                <span className="text-gray-500 w-28 shrink-0">Genres:</span>
+                                <span className="text-white">Romance, Real Life, African Love Story</span>
+                            </div>
+                            <div className="flex gap-2">
+                                <span className="text-gray-500 w-28 shrink-0">This show is:</span>
+                                <span className="text-white">Heartwarming, Emotional, Funny</span>
+                            </div>
+                            <div className="flex gap-2">
+                                <span className="text-gray-500 w-28 shrink-0">Director:</span>
+                                <span className="text-white">God</span>
+                            </div>
+                            <div className="flex gap-2">
+                                <span className="text-gray-500 w-28 shrink-0">Written by:</span>
+                                <span className="text-white">Destiny</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </motion.div>
+        );
+
+        // ─────────────────────────────────────────────────────────────────────────────
+        // PLAY MODAL
+        // ─────────────────────────────────────────────────────────────────────────────
+
+        const PlayModal = ({ isOpen, onClose }) => {
+            const [text, setText] = useState("");
+            const fullText = "Every love story is beautiful, but ours is my favorite. I love you, Queen.";
+            const vidRef = useRef(null);
+
+            useEffect(() => {
+                if (!isOpen) return;
+                setText("");
+                let i = 0;
+                const timer = setInterval(() => {
+                    setText(fullText.slice(0, i));
+                    i++;
+                    if (i > fullText.length) clearInterval(timer);
+                }, 50);
+                return () => clearInterval(timer);
+            }, [isOpen]);
+
+            useEffect(() => {
+                const vid = vidRef.current;
+                if (!vid) return;
+                if (isOpen) { vid.currentTime = 0; vid.play().catch(() => {}); }
+                else { vid.pause(); }
+            }, [isOpen]);
+
+            if (!isOpen) return null;
+
+            return (
+                <AnimatePresence>
+                    <motion.div
+                        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-50 bg-black flex flex-col items-center justify-center p-4 md:p-8"
+                    >
+                        <button
+                            onClick={onClose}
+                            className="absolute top-6 right-6 md:top-8 md:right-8 text-white hover:text-gray-300 transition-colors z-10"
+                        >
+                            <Icon name="x" className="w-8 h-8 md:w-10 md:h-10" />
+                        </button>
+
+                        <div
+                            className="relative max-w-3xl w-full rounded-lg overflow-hidden shadow-2xl mb-6 md:mb-8"
+                            style={{ aspectRatio: '16/9' }}
+                        >
+                            <video
+                                ref={vidRef}
+                                src="Assets/Videos/KampStud2.mp4"
+                                loop
+                                playsInline
+                                className="w-full h-full object-cover cinematic-filter"
+                            />
+                            <div className="absolute bottom-3 right-3 md:bottom-4 md:right-4 pointer-events-none">
+                                <motion.div
+                                    animate={{ scale: [1, 1.2, 1], opacity: [0.7, 1, 0.7] }}
+                                    transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
+                                >
+                                    <Icon name="heart" className="w-6 h-6 md:w-8 md:h-8 text-netflix fill-netflix" />
+                                </motion.div>
+                            </div>
+                        </div>
+
+                        <p className="text-white font-playfair text-xl md:text-4xl italic text-center px-4" style={{ minHeight: '3rem' }}>
+                            {text}<span className="animate-pulse">|</span>
+                        </p>
+                    </motion.div>
+                </AnimatePresence>
+            );
+        };
+
+        // ─────────────────────────────────────────────────────────────────────────────
+        // APP
+        // ─────────────────────────────────────────────────────────────────────────────
+
+        const App = () => {
+            const [showIntro,       setShowIntro]       = useState(true);
+            const [isPlayModalOpen, setIsPlayModalOpen] = useState(false);
+            const [audioPlaying,    setAudioPlaying]    = useState(false);
+            const [activeEpisodeId, setActiveEpisodeId] = useState(null);
+            const audioRef     = useRef(null);
+            const audioStarted = useRef(false);
+
+            const toggleAudio = () => {
+                const audio = audioRef.current;
+                if (!audio) return;
+                if (!audioStarted.current) {
+                    // First click: start the song, unmuted
+                    audio.muted  = false;
+                    audio.volume = 0.6;
+                    audio.play().catch(() => {});
+                    audioStarted.current = true;
+                    setAudioPlaying(true);
+                } else {
+                    // All later clicks: mute/unmute only — song keeps running in background
+                    audio.muted = !audio.muted;
+                    setAudioPlaying(!audio.muted);
+                }
+            };
+
+            return (
+                <div className="relative min-h-screen bg-dark">
+                    {/*
+                        SOUNDTRACK:
+                        Drop your favourite song as an MP3 at  Assets/Sounds/soundtrack.mp3
+                        The music icon (bottom-right) will play it in the background.
+                        It is completely invisible — no popup, no new tab, pure atmosphere.
+                    */}
+                    <audio ref={audioRef} src="Assets/Sounds/SoundTrack1.mp3" loop />
+
+                    <AnimatePresence>
+                        {showIntro && <Intro onComplete={() => setShowIntro(false)} />}
+                    </AnimatePresence>
+
+                    {!showIntro && (
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 1 }}>
+                            <Navbar />
+
+                            {/*
+                                TWO HEROES:
+                                • HeroMobile  → shown on screens BELOW md (portrait phones)
+                                • HeroDesktop → shown on screens md AND ABOVE (tablets, laptops, desktops)
+                                Each has its own background image. Change the src inside each component.
+                            */}
+                            <HeroMobile  onPlayClick={() => setIsPlayModalOpen(true)} />
+                            <HeroDesktop onPlayClick={() => setIsPlayModalOpen(true)} />
+
+                            <div className="relative z-20 mt-4 md:-mt-24 pb-12">
+                                <HorizontalRow title="Our Episodes">
+                                    {EPISODES.map(ep => (
+                                        <EpisodeCard
+                                            key={ep.id}
+                                            episode={ep}
+                                            activeId={activeEpisodeId}
+                                            setActiveId={setActiveEpisodeId}
+                                        />
+                                    ))}
+                                </HorizontalRow>
+                            </div>
+
+                            <AboutSection />
+
+                            <footer className="py-8 text-center border-t border-[#2f2f2f] space-y-2">
+                                <p className="text-gray-500 text-sm">Made with love😘 by Shaun · For Queen · Season 2 · 2026</p>
+                                <p className="text-gray-600 text-xs">
+                                    Powered by{' '}
+                                    <a
+                                        href="https://www.webinnovationnexus.com"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-gray-400 hover:text-white underline underline-offset-2 transition-colors"
+                                    >
+                                        Web Innovation Nexus
+                                    </a>
+                                </p>
+                            </footer>
+
+                            {/*
+                                MUSIC BUTTON (bottom-right corner)
+                                ─────────────────────────────────
+                                When NOT playing → music note icon, grey.
+                                When playing     → three animated red bars (waveform) like Spotify.
+                                Tooltip appears on hover to hint what it does.
+                                The song plays silently in the background — pure atmosphere.
+                            */}
+                            <button
+                                onClick={toggleAudio}
+                                className="music-btn fixed bottom-6 right-6 z-40 w-11 h-11 bg-[#181818]/90 backdrop-blur-sm border border-white/10 rounded-full flex items-center justify-center text-gray-400 hover:text-white hover:scale-110 transition-all shadow-xl"
+                                aria-label={audioPlaying ? "Pause our soundtrack" : "Play our soundtrack"}
+                            >
+                                {audioPlaying ? (
+                                    /* Animated waveform bars when playing */
+                                    <div className="flex items-end gap-[3px] h-4">
+                                        <span className="bar" />
+                                        <span className="bar" />
+                                        <span className="bar" />
+                                    </div>
+                                ) : (
+                                    <Icon name="music" className="w-4 h-4" />
+                                )}
+                                {/* Tooltip */}
+                                <span className="music-tooltip">
+                                    {audioPlaying ? "⏸ Pause our song" : "♪ Play our song"}
+                                </span>
+                            </button>
+
+                            <PlayModal
+                                isOpen={isPlayModalOpen}
+                                onClose={() => setIsPlayModalOpen(false)}
+                            />
+                        </motion.div>
+                    )}
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body></html>
