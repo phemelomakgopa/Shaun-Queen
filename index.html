@@ -134,7 +134,7 @@
             {
                 id: 2,
                 title: "My Place or Your Place?",
-                description: "I love loving you in both our spaces.",
+                description: "Every room feels like home when you're in it.",
                 thumbnail: "Assets/Images/KampStud.jpeg",
                 video: "Assets/Videos/KampStud.mp4",
                 duration: "Endless",
@@ -143,8 +143,8 @@
             {
                 id: 3,
                 title: "Valentine's Day Special",
-                description: "'Txatxi la baratani', which was special.",
-                thumbnail: "Assets/Images/ValentinesDayCollage.jpeg",
+                description: "'Tšatši la baratani, a day made just for us.",
+                thumbnail: "Assets/Images/Vali.png",
                 video: "Assets/Videos/ValVid.mp4",
                 duration: "Timeless",
                 date: ""
@@ -152,7 +152,7 @@
             {
                 id: 4,
                 title: "Graduation Day",
-                description: "Sharing milestones and memories.",
+                description: "Sharing memories and celebrating milestones.",
                 thumbnail: "Assets/Images/GradDay.jpeg",
                 video: "Assets/Videos/GradVid.mp4",
                 duration: "Endless",
@@ -161,7 +161,7 @@
             {
                 id: 5,
                 title: "Golden Hour",
-                description: "Intimate moments that define us.",
+                description: "The light was beautiful. But so were you.",
                 thumbnail: "Assets/Images/KS.jpeg",
                 video: "Assets/Videos/KampStud3.mp4",
                 duration: "Timeless",
@@ -176,10 +176,19 @@
                 duration: "Infinite",
                 date: ""
             },
-            {
+             {
                 id: 7,
-                title: "Chilling at Home",
-                description: "Love this for us.",
+                title: "Playing Dress Up",
+                description: "You didn't dress up for the occasion you were the occasion.",
+                thumbnail: "Assets/Images/DressedToImpress.jpeg",
+                video: "Assets/Videos/Dress.mp4",
+                duration: "Forever",
+                date: ""
+            },
+            {
+                id: 8,
+                title: "She Showed Up",
+                description: "Moving boxes, tired arms.",
                 thumbnail: "Assets/Images/CK.jpeg",
                 video: "Assets/Videos/CKVid.mp4",
                 duration: "Never-ending",
@@ -288,8 +297,12 @@
                         <button className="hover:text-gray-300 transition-colors hidden sm:block">
                             <Icon name="bell" className="w-5 h-5" />
                         </button>
-                        <div className="w-8 h-8 rounded-full bg-netflix flex items-center justify-center text-xs font-medium tracking-wide">
-                            SQ
+                        <div className="w-8 h-8 rounded-md overflow-hidden flex-shrink-0 ring-2 ring-transparent hover:ring-white transition-all duration-200 cursor-pointer">
+                            <img
+                                src="Assets/Images/profilePic.png"
+                                alt="SQ"
+                                className="w-full h-full object-cover"
+                            />
                         </div>
                     </motion.div>
                 </motion.nav>
@@ -546,31 +559,43 @@
                         <CinematicImage src="Assets/Images/LakePhotoQueen1.jpeg" className="w-full aspect-square rounded-md shadow-2xl" />
                     </div>
                     <div className="w-full md:w-2/3 flex flex-col justify-center space-y-5 md:space-y-6">
-                        <div>
-                            <span className="text-gray-500 text-sm md:text-base block mb-2">Cast:</span>
-                            <div className="flex flex-wrap gap-3">
-                                <span className="bg-[#2f2f2f] text-white px-3 md:px-4 py-1.5 md:py-2 rounded-full text-sm md:text-base font-medium">Shaun — The Lead</span>
-                                <span className="bg-[#2f2f2f] text-white px-3 md:px-4 py-1.5 md:py-2 rounded-full text-sm md:text-base font-medium">Queen — The Star</span>
-                            </div>
+    <div>
+        <span className="text-gray-500 text-sm md:text-base block mb-2">Cast:</span>
+        <div className="flex flex-wrap gap-3">
+            <span className="bg-[#2f2f2f] text-white px-3 md:px-4 py-1.5 md:py-2 rounded-full text-sm md:text-base font-medium">Shaun — The Lead</span>
+            <span className="bg-[#2f2f2f] text-white px-3 md:px-4 py-1.5 md:py-2 rounded-full text-sm md:text-base font-medium">Queen — The Star</span>
+        </div>
+    </div>
+
+    {/* ── Storyline ── */}
+    <div>
+        <span className="text-gray-500 text-sm md:text-base block mb-2">Storyline:</span>
+        <p className="font-playfair italic text-gray-300 text-sm md:text-base leading-relaxed bg-[#1c1c1c] border border-white/5 rounded-lg px-4 py-3 md:px-5 md:py-4">
+            Two people. One town (Potch). A story that started quietly and grew into something neither of them saw coming.
+            From stolen glances to shared silences, from first laughs to late nights...
+            this is a love that didn't ask for permission. It just arrived, and it stayed.
+            Season 3 is still being written, one ordinary day at a time.
+        </p>
+    </div>
+
+                    <div className="flex flex-col gap-2 text-sm md:text-base">
+                        <div className="flex gap-2">
+                            <span className="text-gray-500 w-28 shrink-0">Genres:</span>
+                            <span className="text-white">Romance, Real Life, African Love Story</span>
                         </div>
-                        <div className="flex flex-col gap-2 text-sm md:text-base">
-                            <div className="flex gap-2">
-                                <span className="text-gray-500 w-28 shrink-0">Genres:</span>
-                                <span className="text-white">Romance, Real Life, African Love Story</span>
-                            </div>
-                            <div className="flex gap-2">
-                                <span className="text-gray-500 w-28 shrink-0">This show is:</span>
-                                <span className="text-white">Heartwarming, Emotional, Funny</span>
-                            </div>
-                            <div className="flex gap-2">
-                                <span className="text-gray-500 w-28 shrink-0">Director:</span>
-                                <span className="text-white">God</span>
-                            </div>
-                            <div className="flex gap-2">
-                                <span className="text-gray-500 w-28 shrink-0">Written by:</span>
-                                <span className="text-white">Destiny</span>
-                            </div>
+                        <div className="flex gap-2">
+                            <span className="text-gray-500 w-28 shrink-0">This show is:</span>
+                            <span className="text-white">Heartwarming, Emotional, Funny</span>
                         </div>
+                        <div className="flex gap-2">
+                            <span className="text-gray-500 w-28 shrink-0">Director:</span>
+                            <span className="text-white">God</span>
+                        </div>
+                        <div className="flex gap-2">
+                            <span className="text-gray-500 w-28 shrink-0">Written by:</span>
+                            <span className="text-white">Destiny</span>
+                        </div>
+                    </div>
                     </div>
                 </div>
             </motion.div>
